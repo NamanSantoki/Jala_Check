@@ -58,18 +58,13 @@
     </div>
 
     <div class="section" id="plain-results" style="display:none">
-      <div class="section-title">Formula weight</div>
-      <div class="results" style="margin-bottom:1rem">
-        <div class="metric"><div class="metric-label">Total (kg)</div><div class="metric-value" id="p-formula-kg">—</div></div>
-        <div class="metric accent"><div class="metric-label">Per sq mtr</div><div class="metric-value" id="p-formula-sqm">—</div><div class="metric-unit">kg/m²</div></div>
-      </div>
       <div class="section-title">Output</div>
       <div class="results">
         <div class="metric"><div class="metric-label">Actual wt/sq mtr</div><div class="metric-value" id="p-actual-sqm">—</div><div class="metric-unit">kg/m²</div></div>
         <div class="metric"><div class="metric-label">Wt diff/sq mtr</div><div class="metric-value" id="p-wt-diff">—</div><div class="metric-unit">kg/m²</div></div>
         <div class="metric accent"><div class="metric-label">Dia (R)</div><div class="metric-value" id="p-dia-r">—</div><div class="metric-unit">mm</div></div>
       </div>
-      <div class="formula" id="p-formula-text"></div>
+      <div class="formula" id="p-formula-text" style="display:none"></div>
     </div>
   </div>
 
@@ -90,15 +85,6 @@
     </div>
 
     <div class="section" id="dutch-results" style="display:none">
-      <div class="section-title">Formula weights</div>
-      <div class="results" style="margin-bottom:1rem">
-        <div class="metric"><div class="metric-label">Warp (kg)</div><div class="metric-value" id="d-warp-kg">—</div></div>
-        <div class="metric"><div class="metric-label">Warp/sq mtr</div><div class="metric-value" id="d-warp-sqm">—</div><div class="metric-unit">kg/m²</div></div>
-        <div class="metric"><div class="metric-label">Weft (kg)</div><div class="metric-value" id="d-weft-kg">—</div></div>
-        <div class="metric"><div class="metric-label">Weft/sq mtr</div><div class="metric-value" id="d-weft-sqm">—</div><div class="metric-unit">kg/m²</div></div>
-        <div class="metric"><div class="metric-label">Both (kg)</div><div class="metric-value" id="d-both-kg">—</div></div>
-        <div class="metric accent"><div class="metric-label">Both/sq mtr</div><div class="metric-value" id="d-both-sqm">—</div><div class="metric-unit">kg/m²</div></div>
-      </div>
       <div class="section-title">Output</div>
       <div class="results">
         <div class="metric"><div class="metric-label">Actual wt/sq mtr</div><div class="metric-value" id="d-actual-sqm">—</div><div class="metric-unit">kg/m²</div></div>
@@ -108,7 +94,7 @@
         <div class="metric accent"><div class="metric-label">Dia (R) warp</div><div class="metric-value" id="d-dia-warp">—</div><div class="metric-unit">mm</div></div>
         <div class="metric accent"><div class="metric-label">Dia (R) weft</div><div class="metric-value" id="d-dia-weft">—</div><div class="metric-unit">mm</div></div>
       </div>
-      <div class="formula">
+      <div class="formula" style="display:none">
         formula wt/sqm + warp wt diff = Dia(R) × Dia(R) × 0.493 × mesh<br>
         Dia(R) = sqrt((formula wt/sqm + wt diff) / (0.493 × mesh))
       </div>
@@ -126,30 +112,23 @@
   }
 
   function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
-  function fmt(n, d = 3) { return isNaN(n) || !isFinite(n) ? '—' : n.toFixed(d); }
+  function fmt(n, d) { return isNaN(n) || !isFinite(n) ? '—' : n.toFixed(d == null ? 3 : d); }
+  function set(id, val, d) { document.getElementById(id).textContent = fmt(val, d); }
 
   function calcPlain() {
     const warpM = v('p-warp-mesh'), weftM = v('p-weft-mesh');
     const warpD = v('p-warp-dia'), weftD = v('p-weft-dia');
     const width = v('p-width'), length = v('p-length'), actualWt = v('p-actual-wt');
     const area = width * length;
-    const formulaWarpSqm = warpD * warpD * 0.493 * warpM;
-    const formulaWeftSqm = weftD * weftD * 0.493 * weftM;
-    const formulaSqm = formulaWarpSqm + formulaWeftSqm;
-    const formulaKg = formulaSqm * area;
+    const formulaSqm = (warpD * warpD * 0.493 * warpM + weftD * weftD * 0.493 * weftM) / 2;
     const actualSqm = actualWt / area;
     const wtDiff = actualSqm - formulaSqm;
     const mesh = (warpM + weftM) / 2;
     const diaR = Math.sqrt((formulaSqm + wtDiff) / (0.493 * mesh));
 
-    document.getElementById('p-formula-kg').textContent = fmt(formulaKg, 2);
-    document.getElementById('p-formula-sqm').textContent = fmt(formulaSqm, 4);
-    document.getElementById('p-actual-sqm').textContent = fmt(actualSqm, 3);
-    document.getElementById('p-wt-diff').textContent = fmt(wtDiff, 3);
-    document.getElementById('p-dia-r').textContent = fmt(diaR, 3);
-    document.getElementById('p-formula-text').textContent =
-      `formula wt/sqm + warp wt diff = Dia(R) × Dia(R) × 0.493 × mesh\n` +
-      `Dia(R) = sqrt((${fmt(formulaSqm, 4)} + ${fmt(wtDiff, 4)}) / (0.493 × ${mesh})) = ${fmt(diaR, 3)} mm`;
+    set('p-actual-sqm', actualSqm, 3);
+    set('p-wt-diff', wtDiff, 3);
+    set('p-dia-r', diaR, 3);
     document.getElementById('plain-results').style.display = '';
   }
 
@@ -160,29 +139,20 @@
     const area = width * length;
     const warpSqm = warpD * warpD * 0.493 * warpM;
     const weftSqm = weftD * weftD * 0.493 * weftM;
-    const bothSqm = warpSqm + weftSqm;
-    const warpKg = warpSqm * area;
-    const weftKg = weftSqm * area;
-    const bothKg = warpKg + weftKg;
+    const bothSqm = (warpSqm + weftSqm) / 2;
     const actualSqm = actualWt / area;
     const wtDiff = actualSqm - bothSqm;
-    const warpDiff = actualSqm * (warpSqm / bothSqm) - warpSqm;
-    const weftDiff = actualSqm * (weftSqm / bothSqm) - weftSqm;
-    const diaWarp = Math.sqrt((warpSqm + warpDiff) / (0.493 * warpM));
-    const diaWeft = Math.sqrt((weftSqm + weftDiff) / (0.493 * weftM));
+    const warpDiff = (wtDiff * warpSqm) / (warpSqm + weftSqm);
+    const weftDiff = (wtDiff * weftSqm) / (warpSqm + weftSqm);
+    const diaWarp = Math.sqrt((warpSqm / 2 + warpDiff) / (0.493 * warpM));
+    const diaWeft = Math.sqrt((weftSqm / 2 + weftDiff) / (0.493 * weftM));
 
-    document.getElementById('d-warp-kg').textContent = fmt(warpKg, 3);
-    document.getElementById('d-warp-sqm').textContent = fmt(warpSqm, 3);
-    document.getElementById('d-weft-kg').textContent = fmt(weftKg, 3);
-    document.getElementById('d-weft-sqm').textContent = fmt(weftSqm, 3);
-    document.getElementById('d-both-kg').textContent = fmt(bothKg, 3);
-    document.getElementById('d-both-sqm').textContent = fmt(bothSqm, 3);
-    document.getElementById('d-actual-sqm').textContent = fmt(actualSqm, 3);
-    document.getElementById('d-wt-diff').textContent = fmt(wtDiff, 3);
-    document.getElementById('d-warp-diff').textContent = fmt(warpDiff, 3);
-    document.getElementById('d-weft-diff').textContent = fmt(weftDiff, 3);
-    document.getElementById('d-dia-warp').textContent = fmt(diaWarp, 3);
-    document.getElementById('d-dia-weft').textContent = fmt(diaWeft, 3);
+    set('d-actual-sqm', actualSqm, 3);
+    set('d-wt-diff', wtDiff, 3);
+    set('d-warp-diff', warpDiff, 3);
+    set('d-weft-diff', weftDiff, 3);
+    set('d-dia-warp', diaWarp, 3);
+    set('d-dia-weft', diaWeft, 3);
     document.getElementById('dutch-results').style.display = '';
   }
 </script>
