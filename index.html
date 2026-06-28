@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wire Mesh Calculator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; padding: 2rem 1rem; }
+  .app { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: #888; margin-bottom: 1.5rem; }
+  .tabs { display: flex; gap: 4px; background: #e8e8e5; border-radius: 8px; padding: 4px; margin-bottom: 1.5rem; }
+  .tab { flex: 1; padding: 8px 12px; border: none; background: transparent; border-radius: 6px; font-size: 14px; color: #666; cursor: pointer; transition: all 0.15s; }
+  .tab.active { background: #fff; color: #1a1a18; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .section { background: #fff; border: 1px solid #e0e0dc; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .section-title { font-size: 12px; font-weight: 500; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 13px; color: #555; }
+  .field input { padding: 8px 10px; border: 1px solid #d0d0cc; border-radius: 6px; background: #fafaf8; color: #1a1a18; font-size: 14px; width: 100%; outline: none; }
+  .field input:focus { border-color: #5a7fd4; box-shadow: 0 0 0 3px rgba(90,127,212,0.12); }
+  .calc-btn { width: 100%; padding: 10px; background: #1a1a18; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 0.75rem; transition: opacity 0.15s; }
+  .calc-btn:hover { opacity: 0.82; }
+  .results { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+  .metric { background: #f5f5f3; border-radius: 8px; padding: 0.85rem 1rem; }
+  .metric-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .metric-value { font-size: 20px; font-weight: 500; color: #1a1a18; }
+  .metric-unit { font-size: 11px; color: #aaa; }
+  .metric.accent .metric-value { color: #2a5fd4; }
+  .formula { background: #eef2fb; border: 1px solid #c5d3f0; border-radius: 6px; padding: 0.75rem 1rem; font-size: 12px; color: #3a5aaa; font-family: monospace; line-height: 1.7; margin-top: 0.75rem; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Wire Mesh Calculator</h1>
+  <p class="subtitle">Plain / twill weave and dutch weave</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('plain')">Plain or twill weave</button>
+    <button class="tab" onclick="switchTab('dutch')">Plain or twill dutch weave</button>
+  </div>
+
+  <!-- PLAIN WEAVE -->
+  <div id="plain-panel">
+    <div class="section">
+      <div class="section-title">Input</div>
+      <div class="grid">
+        <div class="field"><label>Warp mesh</label><input type="number" id="p-warp-mesh" value="30" step="1"></div>
+        <div class="field"><label>Weft mesh</label><input type="number" id="p-weft-mesh" value="30" step="1"></div>
+        <div class="field"><label>Warp dia (mm)</label><input type="number" id="p-warp-dia" value="0.3" step="0.001"></div>
+        <div class="field"><label>Weft dia (mm)</label><input type="number" id="p-weft-dia" value="0.3" step="0.001"></div>
+        <div class="field"><label>Width (m)</label><input type="number" id="p-width" value="1.22" step="0.01"></div>
+        <div class="field"><label>Length (m)</label><input type="number" id="p-length" value="30.45" step="0.01"></div>
+        <div class="field"><label>Actual weight (kg)</label><input type="number" id="p-actual-wt" value="47.50" step="0.01"></div>
+      </div>
+      <button class="calc-btn" onclick="calcPlain()">Calculate</button>
+    </div>
+
+    <div class="section" id="plain-results" style="display:none">
+      <div class="section-title">Formula weight</div>
+      <div class="results" style="margin-bottom:1rem">
+        <div class="metric"><div class="metric-label">Total (kg)</div><div class="metric-value" id="p-formula-kg">—</div></div>
+        <div class="metric accent"><div class="metric-label">Per sq mtr</div><div class="metric-value" id="p-formula-sqm">—</div><div class="metric-unit">kg/m²</div></div>
+      </div>
+      <div class="section-title">Output</div>
+      <div class="results">
+        <div class="metric"><div class="metric-label">Actual wt/sq mtr</div><div class="metric-value" id="p-actual-sqm">—</div><div class="metric-unit">kg/m²</div></div>
+        <div class="metric"><div class="metric-label">Wt diff/sq mtr</div><div class="metric-value" id="p-wt-diff">—</div><div class="metric-unit">kg/m²</div></div>
+        <div class="metric accent"><div class="metric-label">Dia (R)</div><div class="metric-value" id="p-dia-r">—</div><div class="metric-unit">mm</div></div>
+      </div>
+      <div class="formula" id="p-formula-text"></div>
+    </div>
+  </div>
+
+  <!-- DUTCH WEAVE -->
+  <div id="dutch-panel" style="display:none">
+    <div class="section">
+      <div class="section-title">Input</div>
+      <div class="grid">
+        <div class="field"><label>Warp mesh</label><input type="number" id="d-warp-mesh" value="24" step="1"></div>
+        <div class="field"><label>Weft mesh</label><input type="number" id="d-weft-mesh" value="110" step="1"></div>
+        <div class="field"><label>Warp dia (mm)</label><input type="number" id="d-warp-dia" value="0.376" step="0.001"></div>
+        <div class="field"><label>Weft dia (mm)</label><input type="number" id="d-weft-dia" value="0.264" step="0.001"></div>
+        <div class="field"><label>Width (m)</label><input type="number" id="d-width" value="1.22" step="0.01"></div>
+        <div class="field"><label>Length (m)</label><input type="number" id="d-length" value="16.5" step="0.01"></div>
+        <div class="field"><label>Actual weight (kg)</label><input type="number" id="d-actual-wt" value="51.00" step="0.01"></div>
+      </div>
+      <button class="calc-btn" onclick="calcDutch()">Calculate</button>
+    </div>
+
+    <div class="section" id="dutch-results" style="display:none">
+      <div class="section-title">Formula weights</div>
+      <div class="results" style="margin-bottom:1rem">
+        <div class="metric"><div class="metric-label">Warp (kg)</div><div class="metric-value" id="d-warp-kg">—</div></div>
+        <div class="metric"><div class="metric-label">Warp/sq mtr</div><div class="metric-value" id="d-warp-sqm">—</div><div class="metric-unit">kg/m²</div></div>
+        <div class="metric"><div class="metric-label">Weft (kg)</div><div class="metric-value" id="d-weft-kg">—</div></div>
+        <div class="metric"><div class="metric-label">Weft/sq mtr</div><div class="metric-value" id="d-weft-sqm">—</div><div class="metric-unit">kg/m²</div></div>
+        <div class="metric"><div class="metric-label">Both (kg)</div><div class="metric-value" id="d-both-kg">—</div></div>
+        <div class="metric accent"><div class="metric-label">Both/sq mtr</div><div class="metric-value" id="d-both-sqm">—</div><div class="metric-unit">kg/m²</div></div>
+      </div>
+      <div class="section-title">Output</div>
+      <div class="results">
+        <div class="metric"><div class="metric-label">Actual wt/sq mtr</div><div class="metric-value" id="d-actual-sqm">—</div><div class="metric-unit">kg/m²</div></div>
+        <div class="metric"><div class="metric-label">Wt diff/sq mtr</div><div class="metric-value" id="d-wt-diff">—</div><div class="metric-unit">kg/m²</div></div>
+        <div class="metric"><div class="metric-label">Warp wt diff</div><div class="metric-value" id="d-warp-diff">—</div><div class="metric-unit">kg/m²</div></div>
+        <div class="metric"><div class="metric-label">Weft wt diff</div><div class="metric-value" id="d-weft-diff">—</div><div class="metric-unit">kg/m²</div></div>
+        <div class="metric accent"><div class="metric-label">Dia (R) warp</div><div class="metric-value" id="d-dia-warp">—</div><div class="metric-unit">mm</div></div>
+        <div class="metric accent"><div class="metric-label">Dia (R) weft</div><div class="metric-value" id="d-dia-weft">—</div><div class="metric-unit">mm</div></div>
+      </div>
+      <div class="formula">
+        formula wt/sqm + warp wt diff = Dia(R) × Dia(R) × 0.493 × mesh<br>
+        Dia(R) = sqrt((formula wt/sqm + wt diff) / (0.493 × mesh))
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(t) {
+    document.querySelectorAll('.tab').forEach((b, i) =>
+      b.classList.toggle('active', (i === 0 && t === 'plain') || (i === 1 && t === 'dutch'))
+    );
+    document.getElementById('plain-panel').style.display = t === 'plain' ? '' : 'none';
+    document.getElementById('dutch-panel').style.display = t === 'dutch' ? '' : 'none';
+  }
+
+  function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+  function fmt(n, d = 3) { return isNaN(n) || !isFinite(n) ? '—' : n.toFixed(d); }
+
+  function calcPlain() {
+    const warpM = v('p-warp-mesh'), weftM = v('p-weft-mesh');
+    const warpD = v('p-warp-dia'), weftD = v('p-weft-dia');
+    const width = v('p-width'), length = v('p-length'), actualWt = v('p-actual-wt');
+    const area = width * length;
+    const formulaWarpSqm = warpD * warpD * 0.493 * warpM;
+    const formulaWeftSqm = weftD * weftD * 0.493 * weftM;
+    const formulaSqm = formulaWarpSqm + formulaWeftSqm;
+    const formulaKg = formulaSqm * area;
+    const actualSqm = actualWt / area;
+    const wtDiff = actualSqm - formulaSqm;
+    const mesh = (warpM + weftM) / 2;
+    const diaR = Math.sqrt((formulaSqm + wtDiff) / (0.493 * mesh));
+
+    document.getElementById('p-formula-kg').textContent = fmt(formulaKg, 2);
+    document.getElementById('p-formula-sqm').textContent = fmt(formulaSqm, 4);
+    document.getElementById('p-actual-sqm').textContent = fmt(actualSqm, 3);
+    document.getElementById('p-wt-diff').textContent = fmt(wtDiff, 3);
+    document.getElementById('p-dia-r').textContent = fmt(diaR, 3);
+    document.getElementById('p-formula-text').textContent =
+      `formula wt/sqm + warp wt diff = Dia(R) × Dia(R) × 0.493 × mesh\n` +
+      `Dia(R) = sqrt((${fmt(formulaSqm, 4)} + ${fmt(wtDiff, 4)}) / (0.493 × ${mesh})) = ${fmt(diaR, 3)} mm`;
+    document.getElementById('plain-results').style.display = '';
+  }
+
+  function calcDutch() {
+    const warpM = v('d-warp-mesh'), weftM = v('d-weft-mesh');
+    const warpD = v('d-warp-dia'), weftD = v('d-weft-dia');
+    const width = v('d-width'), length = v('d-length'), actualWt = v('d-actual-wt');
+    const area = width * length;
+    const warpSqm = warpD * warpD * 0.493 * warpM;
+    const weftSqm = weftD * weftD * 0.493 * weftM;
+    const bothSqm = warpSqm + weftSqm;
+    const warpKg = warpSqm * area;
+    const weftKg = weftSqm * area;
+    const bothKg = warpKg + weftKg;
+    const actualSqm = actualWt / area;
+    const wtDiff = actualSqm - bothSqm;
+    const warpDiff = actualSqm * (warpSqm / bothSqm) - warpSqm;
+    const weftDiff = actualSqm * (weftSqm / bothSqm) - weftSqm;
+    const diaWarp = Math.sqrt((warpSqm + warpDiff) / (0.493 * warpM));
+    const diaWeft = Math.sqrt((weftSqm + weftDiff) / (0.493 * weftM));
+
+    document.getElementById('d-warp-kg').textContent = fmt(warpKg, 3);
+    document.getElementById('d-warp-sqm').textContent = fmt(warpSqm, 3);
+    document.getElementById('d-weft-kg').textContent = fmt(weftKg, 3);
+    document.getElementById('d-weft-sqm').textContent = fmt(weftSqm, 3);
+    document.getElementById('d-both-kg').textContent = fmt(bothKg, 3);
+    document.getElementById('d-both-sqm').textContent = fmt(bothSqm, 3);
+    document.getElementById('d-actual-sqm').textContent = fmt(actualSqm, 3);
+    document.getElementById('d-wt-diff').textContent = fmt(wtDiff, 3);
+    document.getElementById('d-warp-diff').textContent = fmt(warpDiff, 3);
+    document.getElementById('d-weft-diff').textContent = fmt(weftDiff, 3);
+    document.getElementById('d-dia-warp').textContent = fmt(diaWarp, 3);
+    document.getElementById('d-dia-weft').textContent = fmt(diaWeft, 3);
+    document.getElementById('dutch-results').style.display = '';
+  }
+</script>
+</body>
+</html>
